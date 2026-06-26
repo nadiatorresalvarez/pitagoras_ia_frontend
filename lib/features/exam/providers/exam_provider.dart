@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../core/dev/offline_data.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../data/dto/answer_dto.dart';
 import '../../../data/dto/exam_dto.dart';
@@ -14,26 +16,63 @@ class ExamProvider {
 
   final ExamRepository _repository;
 
-  Future<ExamTemplate> getExamTemplate(int templateId) =>
-      _repository.getExamTemplate(templateId);
+  Future<ExamTemplate> getExamTemplate(int templateId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.examTemplate(templateId));
+    }
+    return _repository.getExamTemplate(templateId);
+  }
 
-  Future<StudentExam> startStudentExam(StartStudentExamRequestDto request) =>
-      _repository.startStudentExam(request);
+  Future<StudentExam> startStudentExam(StartStudentExamRequestDto request) {
+    if (AppConfig.offlineMode) {
+      OfflineData.resetExamClock();
+      return Future.value(OfflineData.studentExam());
+    }
+    return _repository.startStudentExam(request);
+  }
 
-  Future<StudentExam> getStudentExam(int studentExamId) =>
-      _repository.getStudentExam(studentExamId);
+  Future<StudentExam> getStudentExam(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.studentExam(id: studentExamId));
+    }
+    return _repository.getStudentExam(studentExamId);
+  }
 
-  Future<ExamTimeStatus> getExamTimeStatus(int studentExamId) =>
-      _repository.getExamTimeStatus(studentExamId);
+  Future<ExamTimeStatus> getExamTimeStatus(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.examTimeStatus(studentExamId));
+    }
+    return _repository.getExamTimeStatus(studentExamId);
+  }
 
   Future<StudentAnswer> submitAnswer(
     int studentExamId,
     SubmitAnswerRequestDto request,
-  ) =>
-      _repository.submitAnswer(studentExamId, request);
+  ) {
+    if (AppConfig.offlineMode) {
+      final optionId = request.selectedOptionId;
+      if (optionId == null) {
+        return Future.error(ArgumentError('selectedOptionId requerido'));
+      }
+      return Future.value(
+        OfflineData.submitAnswer(
+          studentExamId: studentExamId,
+          questionId: request.questionId,
+          selectedOptionId: optionId,
+        ),
+      );
+    }
+    return _repository.submitAnswer(studentExamId, request);
+  }
 
-  Future<StudentExamResult> finishStudentExam(int studentExamId) =>
-      _repository.finishStudentExam(studentExamId);
+  Future<StudentExamResult> finishStudentExam(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.error(
+        UnimplementedError('Finalizar examen offline aún no implementado'),
+      );
+    }
+    return _repository.finishStudentExam(studentExamId);
+  }
 }
 
 final examProvider = Provider<ExamProvider>((ref) {

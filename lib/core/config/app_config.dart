@@ -1,12 +1,19 @@
 /// Configuración global de la aplicación.
 ///
 /// Base URL: `flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8000`
+/// Modo sin servidor: `flutter run --dart-define=OFFLINE_MODE=true`
 class AppConfig {
   AppConfig._();
 
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'http://localhost:8000',
+  );
+
+  /// Cuando es `true`, auth y examen usan datos mock locales (sin HTTP).
+  static const bool offlineMode = bool.fromEnvironment(
+    'OFFLINE_MODE',
+    defaultValue: false,
   );
 
   static const String apiPrefix = '/api/v1';
