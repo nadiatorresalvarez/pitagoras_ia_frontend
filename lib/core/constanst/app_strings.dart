@@ -64,5 +64,9 @@ class AppStrings {
   static const String retry = 'Reintentar';
 
   static const String examTitle = 'Examen';
-  static const String examPlaceholder = 'Examen en curso — próximamente';
+  static const String examLoadError = 'No se pudo cargar el examen';
+  static const String examNoQuestions = 'No hay preguntas en este examen';
+  static const String examPrevious = 'Anterior';
+  static const String examNext = 'Siguiente';
+  static const String examTimeExpired = 'El tiempo del examen ha finalizado';
 }
