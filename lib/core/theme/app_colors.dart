@@ -15,4 +15,18 @@ class AppColors {
   static const Color divider = Color(0xFFD8DEE8);
   static const Color bubble = Color(0xFFF0F6FF);
   static const Color cloud = Color(0x33FFFFFF);
+  static const Color success = Color(0xFF22C55E);
+  static const Color successLight = Color(0xFFDCFCE7);
+  static const Color selectedBorder = Color(0xFF14B8A6);
+  static const Color warningBg = Color(0xFFFFF7ED);
+  static const Color warningBorder = Color(0xFFFED7AA);
+  static const Color warningText = Color(0xFFC2410C);
+  static const Color scoreGreen = Color(0xFF16A34A);
+  static const Color chipBg = Color(0xFFEFF6FF);
+  static const Color diagnosticCardBg = Color(0xFFF8FAFC);
+  static const Color progressOrange = Color(0xFFF59E0B);
+  static const Color progressYellow = Color(0xFFEAB308);
+  static const Color danger = Color(0xFFEF4444);
+  static const Color dangerLight = Color(0xFFFEE2E2);
+  static const Color aiCardBg = Color(0xFFEFF6FF);
 }

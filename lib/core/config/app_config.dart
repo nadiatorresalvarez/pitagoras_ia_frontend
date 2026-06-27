@@ -11,9 +11,15 @@ class AppConfig {
   );
 
   /// Cuando es `true`, auth y examen usan datos mock locales (sin HTTP).
+  ///
+  /// Para probar sin backend local:
+  ///   flutter run --dart-define=OFFLINE_MODE=true
+  ///
+  /// O deja `defaultValue: true` mientras desarrollas UI (vuelve a `false`
+  /// cuando tengas la API en local).
   static const bool offlineMode = bool.fromEnvironment(
     'OFFLINE_MODE',
-    defaultValue: false,
+    defaultValue: true, // TEMPORAL — sin backend local
   );
 
   static const String apiPrefix = '/api/v1';

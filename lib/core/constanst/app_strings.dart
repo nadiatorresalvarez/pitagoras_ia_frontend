@@ -69,4 +69,63 @@ class AppStrings {
   static const String examPrevious = 'Anterior';
   static const String examNext = 'Siguiente';
   static const String examTimeExpired = 'El tiempo del examen ha finalizado';
+
+  static const String onboardingUniversityTitle =
+      'Escoge la universidad o instituto para la que te prepararás.';
+
+  static String onboardingAreaTitle(String universityName) =>
+      '¿A qué área aplicarás en la $universityName?';
+
+  static const String onboardingAreaSubtitle =
+      'Personalizaremos tu experiencia y contenidos según tu objetivo.';
+
+  static const String onboardingNotSureYet = 'No estoy seguro aún';
+
+  static const String onboardingCareerTitle = 'Selecciona tu carrera';
+
+  static const String onboardingCareerMascotDefault =
+      'Perfecto. Ajustaré todo para tu perfil. ¡Vamos a ello!';
+
+  static String onboardingCareerMascot(String careerName) =>
+      'Perfecto. Ajustaré todo para el perfil de $careerName. ¡Vamos a ello!';
+
+  static const String diagnosticTitle = 'Examen de Diagnóstico';
+  static const String diagnosticDescription =
+      'Este examen evaluará tus conocimientos en las áreas clave para tu carrera elegida.';
+  static const String diagnosticQuestionsSubtitle =
+      'Preguntas de opción múltiple';
+  static const String diagnosticTimeSubtitle = 'Tiempo máximo';
+  static const String diagnosticAreasSubtitle = 'Ver detalle de áreas';
+  static const String diagnosticAreasLink = 'Ver detalle';
+  static const String diagnosticStartButton = 'Comenzar examen';
+  static const String diagnosticTimerNote =
+      'El temporizador iniciará al comenzar';
+
+  static String diagnosticQuestionProgress(int current) =>
+      'Pregunta $current de 60';
+
+  static const String diagnosticPrevious = 'Anterior';
+  static const String diagnosticMark = 'Marcar';
+  static const String diagnosticNext = 'Siguiente';
+
+  static const String diagnosticProcessingTitle =
+      'Analizando tus respuestas...';
+  static const String diagnosticProcessingSubtitle =
+      'Estamos evaluando tu desempeño en cada área.';
+  static const String diagnosticProcessingNote =
+      'Esto tomará solo unos segundos 🙂';
+
+  static const String diagnosticResultTitle = 'Resultado del Diagnóstico';
+  static const String diagnosticYourScore = 'Tu puntaje obtenido';
+  static const String diagnosticInZone = 'En zona de ingreso';
+  static const String diagnosticPerformanceByArea = 'Desempeño por áreas';
+  static const String diagnosticViewRecommendations = 'Ver recomendaciones IA';
+
+  static const String diagnosticAiHighlight =
+      'Tu mayor oportunidad de mejora está en Ciencia y Tecnología. ';
+  static const String diagnosticAiBody =
+      'Recomendamos dedicarle 3 sesiones por semana.';
+  static const String diagnosticStrengths = 'Fortalezas';
+  static const String diagnosticWeaknesses = 'Debilidades';
+  static const String diagnosticCreatePlan = 'Crear mi plan personalizado';
 }

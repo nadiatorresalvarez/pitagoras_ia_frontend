@@ -64,6 +64,11 @@ class _LoginBottomCardState extends ConsumerState<LoginBottomCard> {
     setState(() => _status = _AuthFormStatus.loading);
 
     try {
+      // ── MODO SIN BACKEND (OFFLINE_MODE=true) ────────────────────────────
+      // No hace HTTP. AuthProvider.login/register guardan un token mock
+      // local (OfflineData) y luego navegas al onboarding.
+      // Para volver al API real: OFFLINE_MODE=false en app_config.dart
+      // ───────────────────────────────────────────────────────────────────
       final auth = ref.read(authProvider);
       if (_isLogin) {
         await auth.login(
@@ -85,7 +90,7 @@ class _LoginBottomCardState extends ConsumerState<LoginBottomCard> {
       if (!mounted) return;
 
       setState(() => _status = _AuthFormStatus.success);
-      context.go(RoutePaths.simulacro);
+      context.go(RoutePaths.onboardingUniversity);
     } catch (error) {
       if (!mounted) return;
 

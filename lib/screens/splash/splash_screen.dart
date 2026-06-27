@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/config/app_config.dart';
 import '../../core/constants/constants.dart';
 import '../../core/providers/providers.dart';
 import '../../core/router/route_paths.dart';
@@ -27,9 +28,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 
   Future<void> _resolveInitialRoute() async {
-    final auth = ref.read(authProvider);
     final minDelay = Future<void>.delayed(_minDisplayDuration);
 
+    // ── MODO SIN BACKEND (OFFLINE_MODE=true) ──────────────────────────────
+    // No valida JWT contra la API. Siempre va al login para que puedas
+    // probar: Login → Universidad → Área → Carrera.
+    // El login/register igual funcionan pero usan datos mock (OfflineData).
+    if (AppConfig.offlineMode) {
+      await minDelay;
+      if (!mounted) return;
+      context.go(RoutePaths.login);
+      return;
+    }
+    // ── FIN modo offline ──────────────────────────────────────────────────
+
+    final auth = ref.read(authProvider);
     final hasToken = await auth.hasSession();
     if (!hasToken) {
       await minDelay;
