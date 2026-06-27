@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../core/dev/offline_data.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../data/models/results_model.dart';
 import '../../../data/repositories/results_repository.dart';
@@ -10,11 +12,19 @@ class ResultsProvider {
 
   final ResultsRepository _repository;
 
-  Future<StudentExamResult> getStudentExamResults(int studentExamId) =>
-      _repository.getStudentExamResults(studentExamId);
+  Future<StudentExamResult> getStudentExamResults(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.finishStudentExam(studentExamId));
+    }
+    return _repository.getStudentExamResults(studentExamId);
+  }
 
-  Future<StudyPlan> getStudyPlan(int studentExamId) =>
-      _repository.getStudyPlan(studentExamId);
+  Future<StudyPlan> getStudyPlan(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.studyPlan(studentExamId));
+    }
+    return _repository.getStudyPlan(studentExamId);
+  }
 }
 
 final resultsProvider = Provider<ResultsProvider>((ref) {

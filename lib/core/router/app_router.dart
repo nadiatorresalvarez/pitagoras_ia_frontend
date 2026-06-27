@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../screens/results/results_page.dart';
 import '../../screens/auth/login_page.dart';
 import '../../screens/auth/register_page.dart';
 import '../../screens/exam/exam_page.dart';
@@ -110,11 +111,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.diagnosticProcessing,
         name: 'diagnostic-processing',
         builder: (context, state) {
+          final studentExamId =
+              int.parse(state.uri.queryParameters['studentExamId'] ?? '0');
           final careerName =
               state.uri.queryParameters['careerName'] ?? 'Ingeniería de Sistemas';
           final universityName =
               state.uri.queryParameters['universityName'] ?? 'UNSA';
           return DiagnosticProcessingPage(
+            studentExamId: studentExamId,
             careerName: careerName,
             universityName: universityName,
           );
@@ -124,11 +128,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.diagnosticResult,
         name: 'diagnostic-result',
         builder: (context, state) {
+          final studentExamId =
+              int.parse(state.uri.queryParameters['studentExamId'] ?? '0');
           final careerName =
               state.uri.queryParameters['careerName'] ?? 'Ingeniería de Sistemas';
           final universityName =
               state.uri.queryParameters['universityName'] ?? 'UNSA';
           return DiagnosticResultPage(
+            studentExamId: studentExamId,
             careerName: careerName,
             universityName: universityName,
           );
@@ -138,11 +145,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: RoutePaths.diagnosticRecommendations,
         name: 'diagnostic-recommendations',
         builder: (context, state) {
+          final studentExamId =
+              int.parse(state.uri.queryParameters['studentExamId'] ?? '0');
           final careerName =
               state.uri.queryParameters['careerName'] ?? 'Ingeniería de Sistemas';
           final universityName =
               state.uri.queryParameters['universityName'] ?? 'UNSA';
           return DiagnosticRecommendationsPage(
+            studentExamId: studentExamId,
             careerName: careerName,
             universityName: universityName,
           );
@@ -159,6 +169,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final studentExamId = int.parse(state.pathParameters['studentExamId']!);
           return ExamPage(studentExamId: studentExamId);
+        },
+      ),
+      GoRoute(
+        path: '${RoutePaths.results}/:studentExamId',
+        name: 'results',
+        builder: (context, state) {
+          final studentExamId = int.parse(state.pathParameters['studentExamId']!);
+          return ResultsPage(studentExamId: studentExamId);
         },
       ),
     ],

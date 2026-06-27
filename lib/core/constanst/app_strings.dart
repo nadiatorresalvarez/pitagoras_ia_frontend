@@ -69,6 +69,45 @@ class AppStrings {
   static const String examPrevious = 'Anterior';
   static const String examNext = 'Siguiente';
   static const String examTimeExpired = 'El tiempo del examen ha finalizado';
+  static const String examFinish = 'Finalizar examen';
+  static const String examFinishTitle = '¿Finalizar simulacro?';
+  static const String examFinishBody =
+      'Una vez finalizado no podrás cambiar tus respuestas.';
+  static const String examFinishConfirm = 'Finalizar y ver resultados';
+  static const String examFinishCancel = 'Seguir examen';
+  static const String examFinishing = 'Calificando tu simulacro…';
+  static const String examFinishError = 'No se pudo finalizar el examen';
+  static const String examAnswerCorrect = '¡Correcto! Buen trabajo.';
+  static const String examAnswerWrong =
+      'Incorrecto. Puedes pedir ayuda al tutor.';
+  static const String examAnswerSaved = 'Respuesta registrada.';
+  static const String examAskTutor = 'Pregúntale al tutor';
+
+  static const String tutorTitle = 'Tutor IA';
+  static const String tutorLoading = 'El tutor está analizando tu pregunta…';
+  static const String tutorError = 'El tutor no está disponible. Intenta de nuevo.';
+  static const String tutorClose = 'Cerrar';
+  static const String tutorOptionalHint = '¿Qué parte no entiendes? (opcional)';
+
+  static const String resultsTitle = 'Tus resultados';
+  static const String resultsLoadError = 'No se pudieron cargar los resultados';
+  static const String resultsScoreSection = 'Puntaje';
+  static const String resultsCorrectLabel = 'Correctas';
+  static const String resultsAreasSection = 'Desglose por área';
+  static const String resultsDiagnosticSection = 'Diagnóstico académico';
+  static const String resultsStrengths = 'Fortalezas';
+  static const String resultsWeaknesses = 'Debilidades';
+  static const String resultsStudyPlanSection = 'Plan de estudio';
+  static const String resultsEstimatedDays = 'Días estimados';
+  static const String resultsFocusSubtopics = 'Subtemas a reforzar';
+  static const String resultsAiSection = 'Análisis con IA';
+  static const String resultsAgentDiagnostic = 'Análisis diagnóstico';
+  static const String resultsAgentMotivator = 'Mensaje motivador';
+  static const String resultsAgentParents = 'Informe para padres';
+  static const String resultsAgentGenerate = 'Generar';
+  static const String resultsAgentLoading = 'Generando…';
+  static const String resultsBackToSimulacro = 'Nuevo simulacro';
+  static const String resultsNoData = 'Sin datos disponibles';
 
   static const String onboardingUniversityTitle =
       'Escoge la universidad o instituto para la que te prepararás.';

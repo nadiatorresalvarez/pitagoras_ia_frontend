@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/config/app_config.dart';
+import '../../../core/dev/offline_data.dart';
 import '../../../core/providers/repository_providers.dart';
 import '../../../data/models/diagnostic_model.dart';
 import '../../../data/repositories/results_repository.dart';
@@ -11,20 +13,32 @@ class DiagnosticProvider {
 
   final ResultsRepository _repository;
 
-  Future<DiagnosticReport> getDiagnostic(int studentExamId) =>
-      _repository.getDiagnostic(studentExamId);
+  Future<DiagnosticReport> getDiagnostic(int studentExamId) {
+    if (AppConfig.offlineMode) {
+      return Future.value(OfflineData.diagnosticReport(studentExamId));
+    }
+    return _repository.getDiagnostic(studentExamId);
+  }
 
-  Future<List<DiagnosticItem>> getDiagnosticAreas(int studentExamId) =>
-      _repository.getDiagnosticAreas(studentExamId);
+  Future<List<DiagnosticItem>> getDiagnosticAreas(int studentExamId) async {
+    final report = await getDiagnostic(studentExamId);
+    return report.areas;
+  }
 
-  Future<List<DiagnosticItem>> getDiagnosticComponents(int studentExamId) =>
-      _repository.getDiagnosticComponents(studentExamId);
+  Future<List<DiagnosticItem>> getDiagnosticComponents(int studentExamId) async {
+    final report = await getDiagnostic(studentExamId);
+    return report.components;
+  }
 
-  Future<List<DiagnosticItem>> getDiagnosticTopics(int studentExamId) =>
-      _repository.getDiagnosticTopics(studentExamId);
+  Future<List<DiagnosticItem>> getDiagnosticTopics(int studentExamId) async {
+    final report = await getDiagnostic(studentExamId);
+    return report.topics;
+  }
 
-  Future<List<DiagnosticItem>> getDiagnosticSubtopics(int studentExamId) =>
-      _repository.getDiagnosticSubtopics(studentExamId);
+  Future<List<DiagnosticItem>> getDiagnosticSubtopics(int studentExamId) async {
+    final report = await getDiagnostic(studentExamId);
+    return report.subtopics;
+  }
 }
 
 final diagnosticProvider = Provider<DiagnosticProvider>((ref) {

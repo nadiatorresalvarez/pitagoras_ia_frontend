@@ -1,4 +1,5 @@
 export '../../features/agents/providers/agents_provider.dart';
+export '../../features/catalog/providers/catalog_provider.dart';
 export '../../features/auth/providers/auth_provider.dart';
 export '../../features/exam/providers/exam_provider.dart';
 export '../../features/results/providers/diagnostic_provider.dart';
