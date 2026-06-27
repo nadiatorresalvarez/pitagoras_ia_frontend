@@ -19,7 +19,7 @@ class AppConfig {
   /// cuando tengas la API en local).
   static const bool offlineMode = bool.fromEnvironment(
     'OFFLINE_MODE',
-    defaultValue: true, // TEMPORAL — sin backend local
+    defaultValue: false,
   );
 
   static const String apiPrefix = '/api/v1';
