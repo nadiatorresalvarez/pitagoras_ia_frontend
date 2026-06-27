@@ -1,140 +1,214 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constanst/app_assets.dart';
 import '../../core/constanst/app_sizes.dart';
 import '../../core/constanst/app_strings.dart';
+import '../../core/providers/providers.dart';
+import '../../core/router/route_paths.dart';
+import '../../core/services/api_exception.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import 'models/diagnostic_mock_data.dart';
+import '../../data/api/interceptors/error_interceptor.dart';
+import '../../data/dto/agents_dto.dart';
+import '../../data/models/diagnostic_model.dart';
+import '../../data/models/results_model.dart';
 import 'widgets/diagnostic_scaffold.dart';
 
-class DiagnosticRecommendationsPage extends StatelessWidget {
+class DiagnosticRecommendationsPage extends ConsumerStatefulWidget {
   const DiagnosticRecommendationsPage({
     super.key,
+    required this.studentExamId,
     required this.careerName,
     required this.universityName,
   });
 
+  final int studentExamId;
   final String careerName;
   final String universityName;
 
   @override
-  Widget build(BuildContext context) {
-    final strengths = DiagnosticMockData.strengths
-        .where((item) => item.isStrength)
-        .toList();
-    final weaknesses = DiagnosticMockData.strengths
-        .where((item) => !item.isStrength)
-        .toList();
+  ConsumerState<DiagnosticRecommendationsPage> createState() =>
+      _DiagnosticRecommendationsPageState();
+}
 
+class _DiagnosticRecommendationsPageState
+    extends ConsumerState<DiagnosticRecommendationsPage> {
+  bool _loading = true;
+  String? _errorMessage;
+  DiagnosticReport? _diagnostic;
+  StudyPlan? _studyPlan;
+  String? _agentInsight;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final diagnostic = await ref.read(diagnosticProvider).getDiagnostic(
+            widget.studentExamId,
+          );
+      final studyPlan = await ref.read(resultsProvider).getStudyPlan(
+            widget.studentExamId,
+          );
+
+      String? insight;
+      try {
+        final agent = await ref.read(agentsProvider).analyzeDiagnostic(
+              AgentRunRequestDto(studentExamId: widget.studentExamId),
+            );
+        insight = agent.content;
+      } catch (_) {
+        insight = null;
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _diagnostic = diagnostic;
+        _studyPlan = studyPlan;
+        _agentInsight = insight;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _errorMessage = _resolveError(error);
+      });
+    }
+  }
+
+  String _resolveError(Object error) {
+    final apiException = readApiException(error);
+    if (apiException != null) return apiException.message;
+    if (error is ApiException) return error.message;
+    return AppStrings.resultsLoadError;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return DiagnosticScaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSizes.padding,
-          8,
-          AppSizes.padding,
-          AppSizes.padding,
-        ),
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+
+    if (_errorMessage != null || _diagnostic == null) {
+      return Center(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(AppSizes.paddingSmall),
-              decoration: BoxDecoration(
-                color: AppColors.aiCardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: RichText(
-                      text: TextSpan(
-                        style: AppTextStyles.welcome,
-                        children: [
-                          TextSpan(
-                            text: AppStrings.diagnosticAiHighlight,
-                            style: AppTextStyles.selectionTitle,
-                          ),
-                          TextSpan(
-                            text: AppStrings.diagnosticAiBody,
-                            style: AppTextStyles.welcome,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Image.asset(
-                    AppAssets.mascotIdea,
-                    height: 72,
-                    fit: BoxFit.contain,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              AppStrings.diagnosticStrengths,
-              style: AppTextStyles.selectionTitle.copyWith(
-                color: AppColors.success,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...strengths.map(
-              (item) => _StrengthWeaknessRow(
-                name: item.name,
-                isStrength: true,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              AppStrings.diagnosticWeaknesses,
-              style: AppTextStyles.selectionTitle.copyWith(
-                color: AppColors.danger,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ...weaknesses.map(
-              (item) => _StrengthWeaknessRow(
-                name: item.name,
-                isStrength: false,
-              ),
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              height: AppSizes.buttonHeight,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusButton),
-                  ),
-                ),
-                child: Text(
-                  AppStrings.diagnosticCreatePlan,
-                  style: AppTextStyles.buttonLight,
-                ),
-              ),
-            ),
+            Text(_errorMessage ?? AppStrings.resultsLoadError, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            OutlinedButton(onPressed: _loadData, child: const Text(AppStrings.retry)),
           ],
         ),
+      );
+    }
+
+    final diagnostic = _diagnostic!;
+    final aiText = _agentInsight ??
+        '${AppStrings.diagnosticAiHighlight}${AppStrings.diagnosticAiBody}';
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.padding,
+        8,
+        AppSizes.padding,
+        AppSizes.padding,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSizes.paddingSmall),
+            decoration: BoxDecoration(
+              color: AppColors.aiCardBg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Text(aiText, style: AppTextStyles.welcome)),
+                const SizedBox(width: 8),
+                Image.asset(AppAssets.mascotIdea, height: 72, fit: BoxFit.contain),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            AppStrings.diagnosticStrengths,
+            style: AppTextStyles.selectionTitle.copyWith(color: AppColors.success),
+          ),
+          const SizedBox(height: 12),
+          ...diagnostic.strengths.map(
+            (item) => _StrengthWeaknessRow(name: item, isStrength: true),
+          ),
+          if (diagnostic.strengths.isEmpty)
+            Text(AppStrings.resultsNoData, style: AppTextStyles.welcome),
+          const SizedBox(height: 20),
+          Text(
+            AppStrings.diagnosticWeaknesses,
+            style: AppTextStyles.selectionTitle.copyWith(color: AppColors.danger),
+          ),
+          const SizedBox(height: 12),
+          ...diagnostic.weaknesses.map(
+            (item) => _StrengthWeaknessRow(name: item, isStrength: false),
+          ),
+          if (_studyPlan != null && _studyPlan!.recommendations.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(AppStrings.resultsStudyPlanSection, style: AppTextStyles.selectionTitle),
+            const SizedBox(height: 12),
+            ..._studyPlan!.recommendations.take(3).map(
+                  (rec) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text('• ${rec.message}', style: AppTextStyles.welcome),
+                  ),
+                ),
+          ],
+          const SizedBox(height: 28),
+          SizedBox(
+            width: double.infinity,
+            height: AppSizes.buttonHeight,
+            child: ElevatedButton(
+              onPressed: () => context.go(RoutePaths.simulacro),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusButton),
+                ),
+              ),
+              child: Text(
+                AppStrings.diagnosticCreatePlan,
+                style: AppTextStyles.buttonLight,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _StrengthWeaknessRow extends StatelessWidget {
-  const _StrengthWeaknessRow({
-    required this.name,
-    required this.isStrength,
-  });
+  const _StrengthWeaknessRow({required this.name, required this.isStrength});
 
   final String name;
   final bool isStrength;
@@ -151,7 +225,7 @@ class _StrengthWeaknessRow extends StatelessWidget {
             size: 22,
           ),
           const SizedBox(width: 10),
-          Text(name, style: AppTextStyles.selectionTitle),
+          Expanded(child: Text(name, style: AppTextStyles.selectionTitle)),
         ],
       ),
     );

@@ -20,6 +20,8 @@ abstract final class RoutePaths {
 
   static String examSession(int studentExamId) => '$exam/$studentExamId';
 
+  static String resultsSession(int studentExamId) => '$results/$studentExamId';
+
   static String onboardingAreaPath({
     required String universityId,
     required String universityName,
@@ -41,26 +43,38 @@ abstract final class RoutePaths {
       '$diagnostic?careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
 
   static String diagnosticExamPath({
+    required int studentExamId,
     required String careerName,
     required String universityName,
   }) =>
-      '$diagnosticExam?careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
+      '$diagnosticExam?studentExamId=$studentExamId&careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
 
   static String diagnosticProcessingPath({
+    required int studentExamId,
     required String careerName,
     required String universityName,
   }) =>
-      '$diagnosticProcessing?careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
+      '$diagnosticProcessing?studentExamId=$studentExamId&careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
 
   static String diagnosticResultPath({
+    required int studentExamId,
     required String careerName,
     required String universityName,
   }) =>
-      '$diagnosticResult?careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
+      '$diagnosticResult?studentExamId=$studentExamId&careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
 
   static String diagnosticRecommendationsPath({
+    required int studentExamId,
     required String careerName,
     required String universityName,
   }) =>
-      '$diagnosticRecommendations?careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
+      '$diagnosticRecommendations?studentExamId=$studentExamId&careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
+
+  static String examSessionWithFlow({
+    required int studentExamId,
+    required String flow,
+    required String careerName,
+    required String universityName,
+  }) =>
+      '$exam/$studentExamId?flow=$flow&careerName=${Uri.encodeComponent(careerName)}&universityName=${Uri.encodeComponent(universityName)}';
 }

@@ -41,4 +41,8 @@ abstract final class ApiPaths {
   static const agentDiagnosticAnalyze = '/agents/diagnostic/analyze';
   static const agentMotivatorEncourage = '/agents/motivator/encourage';
   static const agentParentsReport = '/agents/parents/report';
+
+  // Catálogo académico
+  static const universities = '/universities';
+  static const careers = '/careers';
 }

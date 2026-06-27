@@ -67,9 +67,7 @@ class ExamProvider {
 
   Future<StudentExamResult> finishStudentExam(int studentExamId) {
     if (AppConfig.offlineMode) {
-      return Future.error(
-        UnimplementedError('Finalizar examen offline aún no implementado'),
-      );
+      return Future.value(OfflineData.finishStudentExam(studentExamId));
     }
     return _repository.finishStudentExam(studentExamId);
   }

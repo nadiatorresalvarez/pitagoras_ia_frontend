@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constanst/app_sizes.dart';
 import '../../core/constanst/app_strings.dart';
 import '../../core/providers/providers.dart';
+import '../../core/router/route_paths.dart';
 import '../../core/services/api_exception.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -13,11 +15,13 @@ import '../../data/api/interceptors/error_interceptor.dart';
 import '../../data/dto/answer_dto.dart';
 import '../../data/models/exam_model.dart';
 import '../../data/models/question_model.dart';
+import 'widgets/answer_feedback_banner.dart';
 import 'widgets/exam_option_tile.dart';
 import 'widgets/exam_progress_bar.dart';
 import 'widgets/exam_timer_display.dart';
+import 'widgets/tutor_sheet.dart';
 
-enum _ExamPageStatus { loading, ready, error, submitting }
+enum _ExamPageStatus { loading, ready, error, submitting, finishing }
 
 class ExamPage extends ConsumerStatefulWidget {
   const ExamPage({super.key, required this.studentExamId});
@@ -37,6 +41,7 @@ class _ExamPageState extends ConsumerState<ExamPage> {
   int _currentIndex = 0;
 
   final Map<int, int> _selectedOptions = {};
+  final Map<int, bool?> _answerFeedback = {};
   final Map<int, DateTime> _questionStartedAt = {};
 
   Timer? _pollTimer;
@@ -87,6 +92,9 @@ class _ExamPageState extends ConsumerState<ExamPage> {
       for (final answer in studentExam.answers) {
         if (answer.selectedOptionId != null) {
           _selectedOptions[answer.questionId] = answer.selectedOptionId!;
+        }
+        if (answer.isCorrect != null) {
+          _answerFeedback[answer.questionId] = answer.isCorrect;
         }
       }
 
@@ -162,7 +170,7 @@ class _ExamPageState extends ConsumerState<ExamPage> {
     });
 
     try {
-      await ref.read(examProvider).submitAnswer(
+      final answer = await ref.read(examProvider).submitAnswer(
             widget.studentExamId,
             SubmitAnswerRequestDto(
               questionId: question.id,
@@ -172,7 +180,10 @@ class _ExamPageState extends ConsumerState<ExamPage> {
           );
 
       if (!mounted) return;
-      setState(() => _status = _ExamPageStatus.ready);
+      setState(() {
+        _answerFeedback[question.id] = answer.isCorrect;
+        _status = _ExamPageStatus.ready;
+      });
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -192,34 +203,134 @@ class _ExamPageState extends ConsumerState<ExamPage> {
     _markQuestionStart();
   }
 
-  String _resolveErrorMessage(Object error) {
+  int get _unansweredCount {
+    return _questions.where((q) => !_selectedOptions.containsKey(q.id)).length;
+  }
+
+  Future<void> _confirmFinish() async {
+    final unanswered = _unansweredCount;
+    final body = unanswered > 0
+        ? 'Tienes $unanswered preguntas sin responder. ${AppStrings.examFinishBody}'
+        : AppStrings.examFinishBody;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(AppStrings.examFinishTitle),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(AppStrings.examFinishCancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text(AppStrings.examFinishConfirm),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      await _finishExam();
+    }
+  }
+
+  Future<void> _finishExam() async {
+    if (_status == _ExamPageStatus.finishing) return;
+
+    setState(() {
+      _status = _ExamPageStatus.finishing;
+      _errorMessage = null;
+    });
+
+    try {
+      await ref.read(examProvider).finishStudentExam(widget.studentExamId);
+      if (!mounted) return;
+
+      final params = GoRouterState.of(context).uri.queryParameters;
+      final flow = params['flow'];
+      final careerName = params['careerName'] ?? '';
+      final universityName = params['universityName'] ?? '';
+
+      if (flow == 'diagnostic') {
+        context.go(
+          RoutePaths.diagnosticProcessingPath(
+            studentExamId: widget.studentExamId,
+            careerName: careerName,
+            universityName: universityName,
+          ),
+        );
+        return;
+      }
+
+      context.go(RoutePaths.resultsSession(widget.studentExamId));
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _status = _ExamPageStatus.ready;
+        _errorMessage = _resolveErrorMessage(error, finishContext: true);
+      });
+    }
+  }
+
+  void _openTutor(QuestionForExam question) {
+    TutorSheet.show(
+      context,
+      questionId: question.id,
+      selectedOptionId: _selectedOptions[question.id],
+    );
+  }
+
+  String _resolveErrorMessage(Object error, {bool finishContext = false}) {
     final apiException = readApiException(error);
     if (apiException != null) return apiException.message;
     if (error is ApiException) return error.message;
-    return AppStrings.examLoadError;
+    return finishContext ? AppStrings.examFinishError : AppStrings.examLoadError;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundBottom,
-      appBar: AppBar(
-        title: const Text(AppStrings.examTitle),
-        actions: [
-          if (_remainingSeconds != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Center(
-                child: ExamTimerDisplay(
-                  remainingSeconds: _remainingSeconds!,
-                  isWarning: _remainingSeconds! < 300,
-                  isExpired: _timeStatus?.isExpired ?? false,
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.backgroundBottom,
+          appBar: AppBar(
+            title: const Text(AppStrings.examTitle),
+            actions: [
+              if (_remainingSeconds != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: Center(
+                    child: ExamTimerDisplay(
+                      remainingSeconds: _remainingSeconds!,
+                      isWarning: _remainingSeconds! < 300,
+                      isExpired: _timeStatus?.isExpired ?? false,
+                    ),
+                  ),
                 ),
+            ],
+          ),
+          body: SafeArea(child: _buildBody()),
+        ),
+        if (_status == _ExamPageStatus.finishing)
+          const ColoredBox(
+            color: Color(0x88000000),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: Colors.white),
+                  SizedBox(height: 16),
+                  Text(
+                    AppStrings.examFinishing,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
-      body: SafeArea(child: _buildBody()),
+          ),
+      ],
     );
   }
 
@@ -260,7 +371,10 @@ class _ExamPageState extends ConsumerState<ExamPage> {
 
     final total = _questions.length;
     final isSubmitting = _status == _ExamPageStatus.submitting;
+    final isLastQuestion = _currentIndex >= total - 1;
     final selectedOptionId = _selectedOptions[question.id];
+    final feedback = _answerFeedback[question.id];
+    final canNavigate = !isSubmitting && _status != _ExamPageStatus.finishing;
 
     return Padding(
       padding: const EdgeInsets.all(AppSizes.padding),
@@ -301,6 +415,15 @@ class _ExamPageState extends ConsumerState<ExamPage> {
                       );
                     });
                   }(),
+                  if (feedback != null) ...[
+                    const SizedBox(height: 12),
+                    AnswerFeedbackBanner(
+                      isCorrect: feedback,
+                      onAskTutor: feedback == false
+                          ? () => _openTutor(question)
+                          : null,
+                    ),
+                  ],
                   if (_errorMessage != null) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -328,7 +451,7 @@ class _ExamPageState extends ConsumerState<ExamPage> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _currentIndex > 0 && !isSubmitting
+                  onPressed: _currentIndex > 0 && canNavigate
                       ? () => _goToQuestion(_currentIndex - 1)
                       : null,
                   child: const Text(AppStrings.examPrevious),
@@ -337,15 +460,19 @@ class _ExamPageState extends ConsumerState<ExamPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: _currentIndex < total - 1 && !isSubmitting
-                      ? () => _goToQuestion(_currentIndex + 1)
-                      : null,
+                  onPressed: !canNavigate
+                      ? null
+                      : isLastQuestion
+                          ? _confirmFinish
+                          : () => _goToQuestion(_currentIndex + 1),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     elevation: 0,
                   ),
-                  child: const Text(AppStrings.examNext),
+                  child: Text(
+                    isLastQuestion ? AppStrings.examFinish : AppStrings.examNext,
+                  ),
                 ),
               ),
             ],

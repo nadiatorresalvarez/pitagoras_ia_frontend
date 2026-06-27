@@ -1,42 +1,71 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constanst/app_assets.dart';
 import '../../core/constanst/app_sizes.dart';
 import '../../core/constanst/app_strings.dart';
+import '../../core/providers/providers.dart';
 import '../../core/router/route_paths.dart';
+import '../../core/services/api_exception.dart';
 import '../../core/theme/app_text_styles.dart';
-import 'models/diagnostic_mock_data.dart';
+import '../../data/api/interceptors/error_interceptor.dart';
 import 'widgets/diagnostic_scaffold.dart';
 
-class DiagnosticProcessingPage extends StatefulWidget {
+class DiagnosticProcessingPage extends ConsumerStatefulWidget {
   const DiagnosticProcessingPage({
     super.key,
+    required this.studentExamId,
     required this.careerName,
     required this.universityName,
   });
 
+  final int studentExamId;
   final String careerName;
   final String universityName;
 
   @override
-  State<DiagnosticProcessingPage> createState() =>
+  ConsumerState<DiagnosticProcessingPage> createState() =>
       _DiagnosticProcessingPageState();
 }
 
-class _DiagnosticProcessingPageState extends State<DiagnosticProcessingPage> {
+class _DiagnosticProcessingPageState extends ConsumerState<DiagnosticProcessingPage> {
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
-    Future<void>.delayed(const Duration(seconds: 3), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _processResults());
+  }
+
+  Future<void> _processResults() async {
+    try {
+      await Future.wait([
+        Future<void>.delayed(const Duration(seconds: 2)),
+        ref.read(diagnosticProvider).getDiagnostic(widget.studentExamId),
+      ]);
+
       if (!mounted) return;
       context.go(
         RoutePaths.diagnosticResultPath(
+          studentExamId: widget.studentExamId,
           careerName: widget.careerName,
           universityName: widget.universityName,
         ),
       );
-    });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = _resolveError(error);
+      });
+    }
+  }
+
+  String _resolveError(Object error) {
+    final apiException = readApiException(error);
+    if (apiException != null) return apiException.message;
+    if (error is ApiException) return error.message;
+    return AppStrings.resultsLoadError;
   }
 
   @override
@@ -52,11 +81,7 @@ class _DiagnosticProcessingPageState extends State<DiagnosticProcessingPage> {
         ),
         child: Column(
           children: [
-            Image.asset(
-              AppAssets.mascotIdea,
-              height: 180,
-              fit: BoxFit.contain,
-            ),
+            Image.asset(AppAssets.mascotIdea, height: 180, fit: BoxFit.contain),
             const SizedBox(height: 16),
             Text(
               AppStrings.diagnosticProcessingTitle,
@@ -70,19 +95,22 @@ class _DiagnosticProcessingPageState extends State<DiagnosticProcessingPage> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
-            ...DiagnosticMockData.processingAreas.map(
-              (area) => DiagnosticAreaProgressRow(
-                name: area.name,
-                iconAsset: area.iconAsset,
-                percent: area.percent,
-                isProcessing: area.isProcessing,
+            const CircularProgressIndicator(),
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Text(_errorMessage!, textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _processResults,
+                child: const Text(AppStrings.retry),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              AppStrings.diagnosticProcessingNote,
-              style: AppTextStyles.selectionSubtitle,
-            ),
+            ] else ...[
+              const SizedBox(height: 16),
+              Text(
+                AppStrings.diagnosticProcessingNote,
+                style: AppTextStyles.selectionSubtitle,
+              ),
+            ],
           ],
         ),
       ),

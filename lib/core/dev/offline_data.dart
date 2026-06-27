@@ -1,8 +1,12 @@
 import '../../data/enums.dart';
+import '../../data/models/agents_model.dart';
 import '../../data/models/answer_model.dart';
 import '../../data/models/auth_model.dart';
+import '../../data/models/catalog_model.dart';
+import '../../data/models/diagnostic_model.dart';
 import '../../data/models/exam_model.dart';
 import '../../data/models/question_model.dart';
+import '../../data/models/results_model.dart';
 
 /// Datos mock para desarrollo sin backend.
 ///
@@ -17,6 +21,16 @@ class OfflineData {
 
   static DateTime? _examStartedAt;
   static int _answerIdCounter = 1;
+  static final Map<int, int> _selectedAnswers = {};
+
+  /// Opción correcta por pregunta (ids de [QuestionOptionForExam]).
+  static const Map<int, int> _correctOptionIds = {
+    1: 12, // B → 7
+    2: 22, // B → 30 cm²
+    3: 31, // A → x+6
+    4: 41, // A → 2⁵
+    5: 53, // C → 348
+  };
 
   static AuthSession authSession({
     required String email,
@@ -75,6 +89,43 @@ class OfflineData {
   static void resetExamClock() {
     _examStartedAt = DateTime.now();
     _answerIdCounter = 1;
+    _selectedAnswers.clear();
+  }
+
+  static const List<University> universities = [
+    University(
+      id: 1,
+      code: 'UNSA',
+      name: 'Universidad Nacional de San Agustín',
+      country: 'PE',
+      isActive: true,
+    ),
+    University(
+      id: 2,
+      code: 'UCSM',
+      name: 'Universidad Católica de Santa María',
+      country: 'PE',
+      isActive: true,
+    ),
+  ];
+
+  static List<Career> careersForUniversity(int universityId) {
+    return [
+      Career(
+        id: 1,
+        universityId: universityId,
+        code: 'SIS',
+        name: 'Ingeniería de Sistemas',
+        isActive: true,
+      ),
+      Career(
+        id: 2,
+        universityId: universityId,
+        code: 'CIV',
+        name: 'Ingeniería Civil',
+        isActive: true,
+      ),
+    ];
   }
 
   static StudentExam studentExam({int? id}) {
@@ -123,15 +174,144 @@ class OfflineData {
     required int selectedOptionId,
   }) {
     final now = DateTime.now();
+    _selectedAnswers[questionId] = selectedOptionId;
+    final isCorrect = _correctOptionIds[questionId] == selectedOptionId;
     return StudentAnswer(
       id: _answerIdCounter++,
       studentExamId: studentExamId,
       questionId: questionId,
       selectedOptionId: selectedOptionId,
-      isCorrect: null,
+      isCorrect: isCorrect,
       timeSeconds: 30,
       answeredAt: now,
       createdAt: now,
+    );
+  }
+
+  static int _countCorrect() {
+    var correct = 0;
+    for (final entry in _selectedAnswers.entries) {
+      if (_correctOptionIds[entry.key] == entry.value) correct++;
+    }
+    return correct;
+  }
+
+  static StudentExamResult finishStudentExam(int studentExamId) {
+    final total = _demoQuestions.length;
+    final correct = _countCorrect();
+    final score = total == 0 ? 0.0 : (correct / total) * 100;
+    final now = DateTime.now();
+
+    return StudentExamResult(
+      studentExamId: studentExamId,
+      status: StudentExamStatus.completed,
+      result: ExamResult(
+        id: 1,
+        studentExamId: studentExamId,
+        totalQuestions: total,
+        correctAnswers: correct,
+        scorePercent: score,
+        durationSeconds: 600,
+        calculatedAt: now,
+        createdAt: now,
+      ),
+      areas: [
+        BreakdownItem(
+          id: 1,
+          totalQuestions: total,
+          correctAnswers: correct,
+          scorePercent: score,
+          areaId: 1,
+        ),
+      ],
+      components: const [],
+      topics: const [],
+      subtopics: const [],
+    );
+  }
+
+  static DiagnosticReport diagnosticReport(int studentExamId) {
+    final total = _demoQuestions.length;
+    final correct = _countCorrect();
+    final score = total == 0 ? 0.0 : (correct / total) * 100;
+
+    return DiagnosticReport(
+      studentExamId: studentExamId,
+      globalScorePercent: score,
+      totalQuestions: total,
+      correctAnswers: correct,
+      areas: [
+        DiagnosticItem(
+          entityId: 1,
+          name: 'Matemáticas',
+          totalQuestions: total,
+          correctAnswers: correct,
+          scorePercent: score,
+          level: score >= 70
+              ? PerformanceLevel.strength
+              : score >= 50
+                  ? PerformanceLevel.neutral
+                  : PerformanceLevel.weakness,
+        ),
+        DiagnosticItem(
+          entityId: 2,
+          name: 'Razonamiento',
+          totalQuestions: 2,
+          correctAnswers: correct >= 3 ? 2 : 1,
+          scorePercent: correct >= 3 ? 100 : 50,
+          level: PerformanceLevel.neutral,
+        ),
+      ],
+      components: const [],
+      topics: const [],
+      subtopics: const [],
+      strengths: correct >= 3
+          ? const ['Álgebra básica', 'Operaciones numéricas']
+          : const ['Comprensión de enunciados'],
+      weaknesses: correct < total
+          ? const ['Divisibilidad y patrones numéricos']
+          : const [],
+    );
+  }
+
+  static StudyPlan studyPlan(int studentExamId) {
+    final total = _demoQuestions.length;
+    final correct = _countCorrect();
+    final score = total == 0 ? 0.0 : (correct / total) * 100;
+
+    return StudyPlan(
+      studentExamId: studentExamId,
+      globalScorePercent: score,
+      estimatedDays: score >= 70 ? 14 : 30,
+      focusSubtopics: const ['Divisibilidad', 'Expresiones algebraicas'],
+      recommendations: const [
+        StudyRecommendation(
+          entityType: 'subtopic',
+          entityId: 1,
+          entityName: 'Divisibilidad',
+          scorePercent: 60,
+          resourceType: 'video',
+          ruleId: 'offline-1',
+          message: 'Repasa reglas de divisibilidad con 2, 3 y 5.',
+        ),
+      ],
+      byResourceType: const {},
+    );
+  }
+
+  static AgentInsight agentInsight({
+    required String agentName,
+    required int studentExamId,
+    required String content,
+  }) {
+    return AgentInsight(
+      agentName: agentName,
+      studentExamId: studentExamId,
+      content: content,
+      ragSources: const [],
+      llmModel: 'offline-demo',
+      llmProvider: 'mock',
+      metadata: const {},
     );
   }
 
